@@ -1,6 +1,6 @@
 import {currentAccount,serviceAuthorized} from "@/lib/account";
 import {interviewDb} from "@/lib/interview-db";
-import {mailboxOwner,mailboxAccount,syncSettings} from "@/lib/mailbox";
+import {mailboxAccount,syncSettings} from "@/lib/mailbox";
 import {z} from "zod";
 export const dynamic="force-dynamic";
 const h={"Cache-Control":"private, no-store"};

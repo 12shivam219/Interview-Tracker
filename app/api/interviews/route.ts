@@ -1,6 +1,6 @@
 import { currentAccount } from "@/lib/account";
 import { interviewDb } from "@/lib/interview-db";
-import { mailboxOwner, syncSettings } from "@/lib/mailbox";
+import { syncSettings } from "@/lib/mailbox";
 import { z } from "zod";
 export const dynamic="force-dynamic";
 const schema=z.object({id:z.string().uuid().optional(),company:z.string().trim().min(1).max(150),role:z.string().trim().min(1).max(200),date:z.string().datetime({offset:true}).or(z.literal("")),timezone:z.string().max(80),status:z.enum(["Upcoming","Completed","Cancelled","Needs confirmation"]),round:z.string().max(100),contact:z.string().max(200),link:z.string().max(2000).refine(v=>!v||/^https?:\/\//i.test(v),"Use an http or https meeting link"),notes:z.string().max(20000)});

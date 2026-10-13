@@ -1,4 +1,3 @@
 import { interviewDb } from "./interview-db";
-export const mailboxOwner="12shivamtiwari219@gmail.com";
-export const mailboxAccount="zeeshan.tech26@gmail.com";
-export async function syncSettings(){const row=await interviewDb().prepare("SELECT data FROM mailbox_sync WHERE id = ?").bind("gmail").first<{data:string}>();return row?JSON.parse(row.data):{account:mailboxAccount,enabled:false,scheduleReady:false,lastSync:null};}
+export const mailboxAccount=process.env.MAILBOX_ACCOUNT?.trim()||"Not connected";
+export async function syncSettings(){const db=interviewDb();const row=await db.prepare("SELECT data FROM mailbox_sync WHERE id = ?").bind("gmail").first<{data:string}>();const google=await db.prepare("SELECT email FROM google_connections WHERE id = ?").bind("gmail").first<{email:string}>();const settings=row?JSON.parse(row.data):{account:mailboxAccount,enabled:false,scheduleReady:false,lastSync:null};return {...settings,account:google?.email||settings.account||mailboxAccount,googleConnected:!!google};}

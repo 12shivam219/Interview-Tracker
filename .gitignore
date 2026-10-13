@@ -15,7 +15,7 @@
 
 # next.js
 /.next/
-/.vinext/
+/.netlify/
 /out/
 
 # misc
@@ -37,9 +37,9 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 /dist/
-/.wrangler/
-# Checkout-local execution profile and tool state; never publish them.
+# Checkout-local tool state; never publish it.
 /.sites-runtime/
+/.wrangler/
 /.agents/
 /.codex/
 /outputs/
@@ -49,3 +49,4 @@ next-env.d.ts
 *.tsbuildinfo
 # Keep a safe environment template
 !.env.example
+node_modules

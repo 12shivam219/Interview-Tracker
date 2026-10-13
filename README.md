@@ -15,36 +15,41 @@ A minimal interview workspace with invitation-only accounts, Gmail-imported reco
 
 ## Stack
 
-React 19, TypeScript, Vinext/Vite, Cloudflare Workers, D1 (SQLite), and Drizzle.
+React 19, TypeScript, Next.js, Netlify Functions, Neon PostgreSQL, and Drizzle.
 
-## Development
+## Run Your Own Deployment
 
-Requires Node.js 22.13+ and pnpm (the declared version is in package.json).
+Requires Node.js 22.13+, pnpm, a Netlify account, and a Neon project. The app runs as a Next.js app on Netlify and connects to Neon over its serverless PostgreSQL driver.
 
-```bash
-pnpm install
-pnpm dev
-pnpm build
-```
+1. Create a Neon project and copy its pooled connection string into `DATABASE_URL`.
+2. Copy `.env.example` to `.env.local` for local development and fill in the values below.
+3. Run `pnpm install`, `pnpm db:migrate`, `pnpm dev`, and `pnpm build`.
+4. Import the repository into Netlify. The included `netlify.toml` configures the Next.js adapter and build command.
+5. Add the same environment variables in Netlify site settings, then deploy. Set `APP_URL` to the final public HTTPS URL and `GOOGLE_REDIRECT_URI` to `APP_URL/api/google/callback`.
 
-This source was created for Sites hosting. `.openai/hosting.json` identifies the existing Site and declares its D1 binding. Runtime secrets and live database contents are provisioned separately; they are not included here. If running independently, configure the Worker environment and the `DB` binding for your own deployment.
-
-Apply the SQL migrations in `drizzle/` to an empty database in order. Do not replay migrations on an existing database. Never commit local database files or environment secrets.
+Never commit `.env.local`, database contents, or secret values. After deploy, call `POST /api/auth` with action `bootstrap` and the `x-interview-sync-key` header to create the one-use owner invitation. The app creates the link but does not send email.
 
 ## Authentication configuration
 
-Set these server-side secrets using your hosting environment:
+Set these server-side environment variables locally and in Netlify:
 
+- `DATABASE_URL`: Neon pooled PostgreSQL connection string.
+- `APP_URL`: the public URL used to create invitation links.
+- `OWNER_EMAIL`: your owner account email address.
 - `AUTH_PEPPER`: a cryptographically random secret used for password hashing.
 - `SYNC_SERVICE_TOKEN`: a separate secret for the trusted mailbox sync service.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: OAuth client credentials from Google Cloud Console.
+- `GOOGLE_REDIRECT_URI`: OAuth callback URL registered in Google Cloud Console; defaults to `${APP_URL}/api/google/callback`.
+- `GOOGLE_TOKEN_ENCRYPTION_KEY`: base64-encoded 32-byte key used to encrypt the stored refresh token. Generate one with `openssl rand -base64 32`.
+- `MAILBOX_ACCOUNT`: optional display fallback for existing importer data.
 
-Keep their values out of the browser, source control, and logs. The owner email is configured in `lib/account.ts`; the connected mailbox configuration is in `lib/mailbox.ts`. The live owner sets their own password with a one-use setup invitation; no owner password is stored in this repository.
+Keep secrets out of the browser, source control, and logs. The owner sets a password using the one-use setup invitation; no owner password is stored in this repository.
 
 An authorized service can call `POST /api/auth` with action `bootstrap` and its `x-interview-sync-key` header to generate initial owner setup when no owner exists. Once established, only the owner can invite or revoke users.
 
-## Mailbox syncing
+## Gmail Connection and Import
 
-The Gmail integration uses an external read-only sync workflow that imports records through `/api/mailbox-sync`. Cloning this repository alone does not connect a Gmail account or create a recurring sync. The external workflow needs its own authorized Gmail connection and server-side service authentication. Existing Sites syncing remains configured separately.
+The owner connects Gmail from the Mailbox view. Enable the Gmail API in Google Cloud, configure a Google OAuth Web application with the Gmail read-only scope, and add the callback URL above as an authorized redirect URI. The app encrypts and stores the refresh token in Neon. A separate scheduled importer can fetch `GET /api/google/token` using `x-interview-sync-key`, exchange that refresh token for an access token, parse messages, and submit structured records to `POST /api/mailbox-sync` with the same service token. No Google client secret or refresh token is exposed to the browser. The app does not yet implement the scheduled Gmail message parser.
 
 The app does not send emails or modify calendar events. A past invitation remains Needs review until there is evidence the interview happened.
 

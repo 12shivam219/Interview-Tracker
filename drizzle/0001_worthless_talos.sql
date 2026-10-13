@@ -1,1 +1,0 @@
-CREATE INDEX `idx_interviews_owner` ON `interviews` (`owner`);
